@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import com.sumativa1joelarias.demo.microservices.users.enums.UserRole;
 
 @Entity
 @Table(name = "users")
@@ -19,19 +20,20 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(unique = true, nullable = false)
     private String username;
     
-    @Column(nullable = false, unique = true, length = 100)
-    private String email;
-    
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private String password;
     
-    @Column(nullable = false, length = 20)
-    private String role;
+    @Column(unique = true, nullable = false)
+    private String email;
     
-    @Column(length = 20)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role;
+    
+    @Column(nullable = false)
     private String status;
     
     @Column(name = "created_at")
@@ -40,5 +42,22 @@ public class User {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+    }
+
+    // Métodos helper para verificar roles
+    public boolean isAdmin() {
+        return role == UserRole.ADMIN;
+    }
+
+    public boolean isModerator() {
+        return role == UserRole.MODERATOR;
+    }
+
+    public boolean isUser() {
+        return role == UserRole.USER;
+    }
+
+    public boolean canModerate() {
+        return isAdmin() || isModerator();
     }
 } 

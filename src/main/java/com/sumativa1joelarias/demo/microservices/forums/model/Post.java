@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDateTime;
 
 @Data
@@ -19,11 +20,10 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 200)
+    @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
-    @Lob
+    @Column(nullable = false, columnDefinition = "CLOB")
     private String content;
 
     @Column(name = "user_id", nullable = false)
@@ -34,14 +34,16 @@ public class Post {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", insertable = false, updatable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Category category;
 
-    @Column(length = 20)
-    private String status = "ACTIVE";
+    @Column(nullable = false)
+    private String status;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

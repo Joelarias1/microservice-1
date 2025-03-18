@@ -3,6 +3,7 @@ package com.sumativa1joelarias.demo.microservices.users.service;
 import com.sumativa1joelarias.demo.microservices.users.dto.UserDTO;
 import com.sumativa1joelarias.demo.microservices.users.model.User;
 import com.sumativa1joelarias.demo.microservices.users.repository.UserRepository;
+import com.sumativa1joelarias.demo.microservices.users.enums.UserRole;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,16 @@ public class UserService {
     private UserRepository userRepository;
 
     public UserDTO createUser(UserDTO userDTO) {
+        // Si no se especifica un rol, asignar USER por defecto
+        if (userDTO.getRole() == null) {
+            userDTO.setRole(UserRole.USER);
+        }
+        
+        // Si no se especifica un status, asignar ACTIVE por defecto
+        if (userDTO.getStatus() == null) {
+            userDTO.setStatus("ACTIVE");
+        }
+
         User user = convertToEntity(userDTO);
         User savedUser = userRepository.save(user);
         return convertToDTO(savedUser);
@@ -42,8 +53,16 @@ public class UserService {
         existingUser.setUsername(userDTO.getUsername());
         existingUser.setEmail(userDTO.getEmail());
         existingUser.setPassword(userDTO.getPassword());
-        existingUser.setRole(userDTO.getRole());
-        existingUser.setStatus(userDTO.getStatus());
+        
+        // Solo permitir cambiar el rol si el nuevo rol no es null
+        if (userDTO.getRole() != null) {
+            existingUser.setRole(userDTO.getRole());
+        }
+        
+        // Solo permitir cambiar el status si el nuevo status no es null
+        if (userDTO.getStatus() != null) {
+            existingUser.setStatus(userDTO.getStatus());
+        }
 
         User updatedUser = userRepository.save(existingUser);
         return convertToDTO(updatedUser);
@@ -57,13 +76,15 @@ public class UserService {
     }
 
     private User convertToEntity(UserDTO userDTO) {
-        User user = new User();
-        user.setUsername(userDTO.getUsername());
-        user.setEmail(userDTO.getEmail());
-        user.setPassword(userDTO.getPassword());
-        user.setRole(userDTO.getRole());
-        user.setStatus(userDTO.getStatus());
-        return user;
+        return User.builder()
+                .id(userDTO.getId())
+                .username(userDTO.getUsername())
+                .email(userDTO.getEmail())
+                .password(userDTO.getPassword())
+                .role(userDTO.getRole())
+                .status(userDTO.getStatus())
+                .createdAt(userDTO.getCreatedAt())
+                .build();
     }
 
     private UserDTO convertToDTO(User user) {

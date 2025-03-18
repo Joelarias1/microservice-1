@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import com.sumativa1joelarias.demo.microservices.users.enums.UserRole;
 import java.time.LocalDateTime;
 
 @Data
@@ -16,7 +16,7 @@ public class UserDTO {
     private String username;
     private String email;
     private String password;
-    private String role;
+    private UserRole role;
     private String status;
     private LocalDateTime createdAt;
 } 
