@@ -17,6 +17,7 @@ public class DemoApplication {
 		SpringApplication.run(DemoApplication.class, args);
 	}
 
+	/* // Comentado: La inicialización de datos se moverá a data.sql
 	@Bean
 	public CommandLineRunner initData(CategoryRepository categoryRepository, UserRepository userRepository) {
 		return args -> {
@@ -52,10 +53,11 @@ public class DemoApplication {
 		User user = new User();
 		user.setUsername(username);
 		user.setEmail(email);
-		user.setPassword(password);
+		user.setPassword(password); // ¡Considerar hashear la contraseña aquí!
 		user.setRole(role);
 		user.setStatus("ACTIVE");
 		repository.save(user);
 	}
+	*/
 
 }

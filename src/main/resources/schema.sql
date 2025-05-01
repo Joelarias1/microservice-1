@@ -1,45 +1,10 @@
--- Eliminar tablas si existen
-BEGIN
-   EXECUTE IMMEDIATE 'DROP TABLE comments';
-EXCEPTION
-   WHEN OTHERS THEN
-      IF SQLCODE != -942 THEN
-         RAISE;
-      END IF;
-END;
-/
+-- Eliminar tablas si existen (puede fallar si no existen, se ignora con continue-on-error=true)
+DROP TABLE comments;
+DROP TABLE posts;
+DROP TABLE categories;
+DROP TABLE users;
 
-BEGIN
-   EXECUTE IMMEDIATE 'DROP TABLE posts';
-EXCEPTION
-   WHEN OTHERS THEN
-      IF SQLCODE != -942 THEN
-         RAISE;
-      END IF;
-END;
-/
-
-BEGIN
-   EXECUTE IMMEDIATE 'DROP TABLE categories';
-EXCEPTION
-   WHEN OTHERS THEN
-      IF SQLCODE != -942 THEN
-         RAISE;
-      END IF;
-END;
-/
-
-BEGIN
-   EXECUTE IMMEDIATE 'DROP TABLE users';
-EXCEPTION
-   WHEN OTHERS THEN
-      IF SQLCODE != -942 THEN
-         RAISE;
-      END IF;
-END;
-/
-
--- Crear tablas
+-- Crear tabla users
 CREATE TABLE users (
     id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     username VARCHAR2(50) UNIQUE NOT NULL,
@@ -50,6 +15,7 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Crear tabla categories
 CREATE TABLE categories (
     id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR2(100) NOT NULL,
@@ -57,6 +23,7 @@ CREATE TABLE categories (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Crear tabla posts
 CREATE TABLE posts (
     id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     title VARCHAR2(200) NOT NULL,
@@ -69,6 +36,7 @@ CREATE TABLE posts (
     CONSTRAINT fk_post_category FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 
+-- Crear tabla comments
 CREATE TABLE comments (
     id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     content CLOB NOT NULL,
