@@ -6,8 +6,8 @@ INSERT INTO categories (name, description) VALUES ('Deportes', 'Conversaciones s
 INSERT INTO categories (name, description) VALUES ('Cine y Series', 'Debates sobre películas, series y entretenimiento');
 
 -- Insertar Usuarios Iniciales
--- ¡ATENCIÓN! Las contraseñas están en texto plano. Considera usar hashes en una aplicación real.
-INSERT INTO users (username, email, password, role, status) VALUES ('admin', 'admin@example.com', '123456', 'ADMIN', 'ACTIVE');
-INSERT INTO users (username, email, password, role, status) VALUES ('moderator', 'moderator@example.com', '123456', 'MODERATOR', 'ACTIVE');
-INSERT INTO users (username, email, password, role, status) VALUES ('user1', 'user1@example.com', '123456', 'USER', 'ACTIVE');
-INSERT INTO users (username, email, password, role, status) VALUES ('user2', 'user2@example.com', '123456', 'USER', 'ACTIVE'); 
+-- La contraseña para todos es '123456', hasheada con BCrypt.
+INSERT INTO users (username, email, password, role, status) VALUES ('admin', 'admin@example.com', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', 'ADMIN', 'ACTIVE');
+INSERT INTO users (username, email, password, role, status) VALUES ('moderator', 'moderator@example.com', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', 'MODERATOR', 'ACTIVE');
+INSERT INTO users (username, email, password, role, status) VALUES ('user1', 'user1@example.com', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', 'USER', 'ACTIVE');
+INSERT INTO users (username, email, password, role, status) VALUES ('user2', 'user2@example.com', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', 'USER', 'ACTIVE'); 
