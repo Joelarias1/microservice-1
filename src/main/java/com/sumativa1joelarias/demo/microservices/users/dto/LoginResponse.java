@@ -6,9 +6,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class LoginResponse {
     private String token;
-    // Podrías añadir más campos si los necesitas en el frontend,
-    // como el rol o el id del usuario.
+    private Long userId;
+    private String role;
+    
+    public LoginResponse(String token) {
+        this.token = token;
+    }
 } 

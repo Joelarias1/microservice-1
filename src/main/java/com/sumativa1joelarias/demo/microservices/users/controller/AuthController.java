@@ -50,6 +50,8 @@ public class AuthController {
         System.out.println("Usuario encontrado (simple): " + user.getUsername());
         System.out.println("Contraseña recibida: [" + loginRequest.getPassword() + "]"); 
         System.out.println("Contraseña almacenada: [" + user.getPassword() + "]"); 
+        System.out.println("Rol del usuario: " + user.getRole().toString());
+        System.out.println("ID del usuario: " + user.getId());
 
         // Usar comparación directa .equals()
         boolean passwordMatch = loginRequest.getPassword().equals(user.getPassword());
@@ -57,14 +59,25 @@ public class AuthController {
         
         if (passwordMatch) {
             System.out.println("Contraseña coincide (simple). Generando token...");
-            // Generar un token JWT simple
+            // Generar un token JWT simple con más información
             String token = Jwts.builder()
-                               .setSubject(user.getEmail()) 
+                               .setSubject(user.getEmail())
+                               .claim("userId", user.getId())
+                               .claim("role", user.getRole().toString())
                                .setIssuedAt(new Date())
                                .signWith(jwtSecretKey)
                                .compact();
             
-            return ResponseEntity.ok(new LoginResponse(token));
+            // Creamos una respuesta más completa con token, userId y role
+            LoginResponse response = new LoginResponse(token);
+            response.setUserId(user.getId());
+            response.setRole(user.getRole().toString());
+            
+            System.out.println("Respuesta de login a enviar: token=" + (token != null ? token.substring(0, 15) + "..." : "null") 
+                             + ", userId=" + user.getId() 
+                             + ", role=" + user.getRole().toString());
+            
+            return ResponseEntity.ok(response);
         } else {
              System.out.println("Contraseña NO coincide (simple).");
              Map<String, String> errorResponse = Collections.singletonMap("error", "Usuario o contraseña incorrectos");
@@ -90,7 +103,7 @@ public class AuthController {
         newUser.setEmail(registerRequest.getEmail());
         // Guardar contraseña en texto plano (INSEGURO - SOLO PARA TEST)
         newUser.setPassword(registerRequest.getPassword()); 
-        newUser.setRole(com.sumativa1joelarias.demo.microservices.users.enums.UserRole.USER); 
+        newUser.setRole(com.sumativa1joelarias.demo.microservices.users.enums.UserRole.ADMIN); // Asignamos rol ADMIN por mientras
         newUser.setStatus("ACTIVE");
 
         try {

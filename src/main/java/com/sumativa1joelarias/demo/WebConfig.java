@@ -2,19 +2,18 @@ package com.sumativa1joelarias.demo; // Ubicado en el paquete principal
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-@EnableWebSecurity // Anotación descomentada
+// @EnableWebSecurity ELIMINADO
 public class WebConfig {
 
+    // La configuración CORS con WebMvcConfigurer puede coexistir o reemplazarse
+    // por la configuración CORS en SecurityConfig. Dejémosla por ahora, 
+    // pero la de SecurityConfig tiene precedencia si ambas están.
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
@@ -29,26 +28,12 @@ public class WebConfig {
         };
     }
 
-    // Bean PasswordEncoder (Descomentado)
+    // Bean PasswordEncoder (se mantiene aquí, es útil)
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // Bean SecurityFilterChain (Descomentado y ajustado)
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable())
-            .cors(cors -> {})
-            .authorizeHttpRequests(auth -> auth
-                // Permitir acceso público a login, register Y health check
-                .requestMatchers("/api/auth/**", "/api/health/**").permitAll() 
-                .anyRequest().authenticated() 
-            )
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-            
-        return http.build();
-    }
+    // Bean SecurityFilterChain ELIMINADO
 
 } 
