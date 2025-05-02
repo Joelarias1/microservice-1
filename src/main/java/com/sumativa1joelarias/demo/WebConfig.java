@@ -8,12 +8,9 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-// @EnableWebSecurity ELIMINADO
 public class WebConfig {
 
-    // La configuración CORS con WebMvcConfigurer puede coexistir o reemplazarse
-    // por la configuración CORS en SecurityConfig. Dejémosla por ahora, 
-    // pero la de SecurityConfig tiene precedencia si ambas están.
+
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
