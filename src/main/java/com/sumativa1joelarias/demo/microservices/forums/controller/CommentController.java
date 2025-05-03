@@ -1,58 +1,53 @@
 package com.sumativa1joelarias.demo.microservices.forums.controller;
 
 import com.sumativa1joelarias.demo.microservices.forums.model.Comment;
-import com.sumativa1joelarias.demo.microservices.forums.repository.CommentRepository;
+import com.sumativa1joelarias.demo.microservices.forums.service.CommentService;
+import com.sumativa1joelarias.demo.microservices.forums.dto.CreateCommentDTO;
 import com.sumativa1joelarias.demo.microservices.forums.dto.MessageResponse;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/comments")
 public class CommentController {
 
     @Autowired
-    private CommentRepository commentRepository;
+    private CommentService commentService;
 
     @PostMapping
-    public ResponseEntity<MessageResponse> createComment(@RequestBody Comment comment) {
-        Comment savedComment = commentRepository.save(comment);
-        return ResponseEntity.ok(MessageResponse.success("Comentario creado exitosamente", savedComment));
+    public ResponseEntity<MessageResponse> createComment(@Valid @RequestBody CreateCommentDTO createCommentDTO) {
+        MessageResponse response = commentService.createComment(createCommentDTO);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/post/{postId}")
     public ResponseEntity<MessageResponse> getCommentsByPost(@PathVariable Long postId) {
-        List<Comment> comments = commentRepository.findByPostId(postId);
-        return ResponseEntity.ok(MessageResponse.success("Comentarios obtenidos exitosamente", comments));
+        MessageResponse response = commentService.getAllCommentsByPost(postId);
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<MessageResponse> getCommentsByUser(@PathVariable Long userId) {
-        List<Comment> comments = commentRepository.findByUserId(userId);
-        return ResponseEntity.ok(MessageResponse.success("Comentarios del usuario obtenidos exitosamente", comments));
+    @GetMapping("/{id}")
+    public ResponseEntity<MessageResponse> getCommentById(@PathVariable Long id) {
+        MessageResponse response = commentService.getCommentById(id);
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<MessageResponse> updateComment(@PathVariable Long id, @RequestBody Comment commentDetails) {
-        return commentRepository.findById(id)
-                .map(comment -> {
-                    comment.setContent(commentDetails.getContent());
-                    comment.setStatus(commentDetails.getStatus());
-                    Comment updatedComment = commentRepository.save(comment);
-                    return ResponseEntity.ok(MessageResponse.success("Comentario actualizado exitosamente", updatedComment));
-                })
-                .orElse(ResponseEntity.ok(MessageResponse.error("Comentario no encontrado")));
+    public ResponseEntity<MessageResponse> updateComment(
+            @PathVariable Long id,
+            @RequestParam String content,
+            @RequestParam Long userId) {
+        MessageResponse response = commentService.updateComment(id, content, userId);
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<MessageResponse> deleteComment(@PathVariable Long id) {
-        return commentRepository.findById(id)
-                .map(comment -> {
-                    commentRepository.delete(comment);
-                    return ResponseEntity.ok(MessageResponse.success("Comentario eliminado exitosamente"));
-                })
-                .orElse(ResponseEntity.ok(MessageResponse.error("Comentario no encontrado")));
+    public ResponseEntity<MessageResponse> deleteComment(
+            @PathVariable Long id,
+            @RequestParam Long userId) {
+        MessageResponse response = commentService.deleteComment(id, userId);
+        return ResponseEntity.ok(response);
     }
 } 

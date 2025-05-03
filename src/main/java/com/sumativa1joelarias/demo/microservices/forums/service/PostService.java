@@ -5,13 +5,20 @@ import com.sumativa1joelarias.demo.microservices.forums.repository.PostRepositor
 import com.sumativa1joelarias.demo.microservices.users.repository.UserRepository;
 import com.sumativa1joelarias.demo.microservices.forums.repository.CategoryRepository;
 import com.sumativa1joelarias.demo.microservices.forums.dto.MessageResponse;
+import com.sumativa1joelarias.demo.microservices.forums.dto.CreatePostDTO;
+import com.sumativa1joelarias.demo.microservices.forums.dto.PostDTO;
 import com.sumativa1joelarias.demo.microservices.users.model.User;
 import com.sumativa1joelarias.demo.microservices.users.enums.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PostService {
@@ -59,6 +66,35 @@ public class PostService {
                 }
 
                 Post savedPost = postRepository.save(post);
+                return MessageResponse.success("Post creado exitosamente", savedPost);
+            })
+            .orElse(MessageResponse.error("El usuario especificado no existe"));
+    }
+
+    // Nuevo método para crear post usando DTO
+    public MessageResponse createPostFromDTO(CreatePostDTO createPostDTO) {
+        // Validar que el usuario existe y tiene permisos
+        return userRepository.findById(createPostDTO.getUserId())
+            .map(user -> {
+                if (user.getStatus().equals("BANNED")) {
+                    return MessageResponse.error("Usuario baneado no puede crear posts");
+                }
+                
+                // Validar que la categoría existe
+                if (!categoryRepository.existsById(createPostDTO.getCategoryId())) {
+                    return MessageResponse.error("La categoría especificada no existe");
+                }
+
+                // Convertir DTO a entidad
+                Post newPost = Post.builder()
+                    .title(createPostDTO.getTitle())
+                    .content(createPostDTO.getContent())
+                    .userId(createPostDTO.getUserId())
+                    .categoryId(createPostDTO.getCategoryId())
+                    .status("ACTIVE")
+                    .build();
+
+                Post savedPost = postRepository.save(newPost);
                 return MessageResponse.success("Post creado exitosamente", savedPost);
             })
             .orElse(MessageResponse.error("El usuario especificado no existe"));
@@ -112,6 +148,42 @@ public class PostService {
     public MessageResponse getAllPosts() {
         List<Post> posts = postRepository.findAll();
         return MessageResponse.success("Posts obtenidos exitosamente", posts);
+    }
+
+    // Método para obtener posts paginados
+    public MessageResponse getPagedPosts(int page, int size, String sortBy, String direction) {
+        // Validar parámetros de paginación
+        if (page < 0) page = 0;
+        if (size <= 0) size = 10;
+        if (size > 100) size = 100; // Limitar para evitar consultas muy grandes
+        
+        // Validar parámetros de ordenamiento
+        if (sortBy == null || sortBy.isEmpty()) sortBy = "createdAt";
+        
+        // Crear objeto Pageable para la paginación y ordenamiento
+        Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        
+        // Obtener página de posts
+        Page<Post> postsPage = postRepository.findAll(pageable);
+        
+        // Crear respuesta con metadatos de paginación
+        return MessageResponse.success("Posts obtenidos exitosamente", postsPage);
+    }
+
+    // Método para buscar posts por título o contenido
+    public MessageResponse searchPosts(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return MessageResponse.error("El término de búsqueda no puede estar vacío");
+        }
+        
+        List<Post> posts = postRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(query, query);
+        
+        if (posts.isEmpty()) {
+            return MessageResponse.success("No se encontraron posts con el término: " + query, posts);
+        }
+        
+        return MessageResponse.success("Posts encontrados exitosamente", posts);
     }
 
     public MessageResponse getPostById(Long id) {
@@ -186,5 +258,28 @@ public class PostService {
 
         List<Post> posts = postRepository.findByUserId(userId);
         return MessageResponse.success("Posts obtenidos exitosamente", posts);
+    }
+
+    // Método para convertir Post a PostDTO
+    private PostDTO convertToDTO(Post post) {
+        String username = userRepository.findById(post.getUserId())
+            .map(User::getUsername)
+            .orElse("Usuario desconocido");
+            
+        String categoryName = categoryRepository.findById(post.getCategoryId())
+            .map(category -> category.getName())
+            .orElse("Categoría desconocida");
+            
+        return PostDTO.builder()
+            .id(post.getId())
+            .title(post.getTitle())
+            .content(post.getContent())
+            .userId(post.getUserId())
+            .username(username)
+            .categoryId(post.getCategoryId())
+            .categoryName(categoryName)
+            .createdAt(post.getCreatedAt())
+            .status(post.getStatus())
+            .build();
     }
 } 

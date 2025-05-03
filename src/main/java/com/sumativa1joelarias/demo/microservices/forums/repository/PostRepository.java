@@ -9,4 +9,5 @@ import java.util.List;
 public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findByCategoryId(Long categoryId);
     List<Post> findByUserId(Long userId);
+    List<Post> findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(String title, String content);
 } 
