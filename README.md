@@ -100,7 +100,6 @@ CREATE TABLE comments (
 - `GET /api/users/{id}` - Obtener usuario por ID
 - `PUT /api/users/{id}` - Actualizar usuario
 - `DELETE /api/users/{id}` - Eliminar usuario
-- `POST /api/auth/login` - Iniciar sesión
 
 ### Foros
 - `POST /api/posts` - Crear publicación
