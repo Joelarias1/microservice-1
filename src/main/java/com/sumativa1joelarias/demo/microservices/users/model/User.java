@@ -36,6 +36,13 @@ public class User {
     @Column(nullable = false)
     private String status;
     
+    // Nuevos campos para la aplicación frontend
+    @Column(name = "full_name")
+    private String fullName;
+    
+    @Column(name = "avatar", columnDefinition = "TEXT")
+    private String avatar;
+    
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     

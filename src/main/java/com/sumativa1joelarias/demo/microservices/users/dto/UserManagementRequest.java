@@ -28,4 +28,13 @@ public class UserManagementRequest {
     
     // Añadir campo para el estado
     private String status;
+    
+    // Campos adicionales para la aplicación frontend
+    private String fullName;
+    
+    private String avatar;
+    
+    // Podría agregarse más campos según necesidades, como:
+    // private String location;
+    // private String bio;
 } 

@@ -9,5 +9,6 @@ public interface UserService {
     UserDTO getUserById(Long id);
     UserDTO createUser(UserManagementRequest request);
     UserDTO updateUser(Long id, UserManagementRequest request);
+    UserDTO updateProfile(Long id, UserManagementRequest request);
     void deleteUser(Long id);
 } 

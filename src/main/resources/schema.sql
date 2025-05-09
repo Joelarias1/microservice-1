@@ -12,6 +12,8 @@ CREATE TABLE users (
     email VARCHAR2(100) UNIQUE NOT NULL,
     role VARCHAR2(20) NOT NULL,
     status VARCHAR2(20) DEFAULT 'ACTIVE',
+    full_name VARCHAR2(255),
+    avatar CLOB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

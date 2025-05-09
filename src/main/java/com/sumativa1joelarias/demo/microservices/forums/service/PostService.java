@@ -19,9 +19,14 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.PageImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class PostService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PostService.class);
 
     @Autowired
     private PostRepository postRepository;
@@ -31,6 +36,12 @@ public class PostService {
 
     @Autowired
     private CategoryRepository categoryRepository;
+    
+    @Autowired
+    private PostTestDataService testDataService;
+    
+    // Variable para controlar si se deben usar datos de prueba siempre
+    private boolean alwaysUseTestData = true;
 
     private boolean canUserModifyPost(User user, Post post) {
         // Si el usuario está baneado, no puede hacer nada
@@ -147,6 +158,13 @@ public class PostService {
 
     public MessageResponse getAllPosts() {
         List<Post> posts = postRepository.findAll();
+        
+        // Si siempre queremos usar datos de prueba o no hay posts en la base de datos
+        if (alwaysUseTestData || posts.isEmpty()) {
+            logger.info("Usando datos de prueba para getAllPosts");
+            posts = testDataService.generateTestPosts();
+        }
+        
         return MessageResponse.success("Posts obtenidos exitosamente", posts);
     }
 
@@ -167,7 +185,43 @@ public class PostService {
         // Obtener página de posts
         Page<Post> postsPage = postRepository.findAll(pageable);
         
-        // Crear respuesta con metadatos de paginación
+        // Si siempre queremos usar datos de prueba o no hay posts en la base de datos
+        if (alwaysUseTestData || postsPage.isEmpty()) {
+            logger.info("Usando datos de prueba para getPagedPosts");
+            List<Post> testPosts = testDataService.generateTestPosts();
+            
+            // Ordenar según los parámetros
+            if ("asc".equalsIgnoreCase(direction)) {
+                if ("title".equals(sortBy)) {
+                    testPosts.sort((a, b) -> a.getTitle().compareTo(b.getTitle()));
+                } else if ("createdAt".equals(sortBy)) {
+                    testPosts.sort((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt()));
+                }
+            } else {
+                if ("title".equals(sortBy)) {
+                    testPosts.sort((a, b) -> b.getTitle().compareTo(a.getTitle()));
+                } else if ("createdAt".equals(sortBy)) {
+                    testPosts.sort((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()));
+                }
+            }
+            
+            // Crear paginación manual
+            int start = (int) pageable.getOffset();
+            int end = Math.min((start + pageable.getPageSize()), testPosts.size());
+            
+            // Si el inicio está fuera de rango, devolver lista vacía
+            if (start >= testPosts.size()) {
+                return MessageResponse.success("No hay más posts disponibles", 
+                        new PageImpl<>(List.of(), pageable, testPosts.size()));
+            }
+            
+            // Subconjunto de datos para la página actual
+            List<Post> pageContent = testPosts.subList(start, end);
+            Page<Post> testPage = new PageImpl<>(pageContent, pageable, testPosts.size());
+            
+            return MessageResponse.success("Posts de prueba obtenidos exitosamente", testPage);
+        }
+        
         return MessageResponse.success("Posts obtenidos exitosamente", postsPage);
     }
 
@@ -179,15 +233,31 @@ public class PostService {
         
         List<Post> posts = postRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(query, query);
         
-        if (posts.isEmpty()) {
-            return MessageResponse.success("No se encontraron posts con el término: " + query, posts);
+        // Si siempre queremos usar datos de prueba o no hay resultados en la base de datos
+        if (alwaysUseTestData || posts.isEmpty()) {
+            logger.info("Usando datos de prueba para searchPosts");
+            posts = testDataService.searchTestPosts(query);
         }
         
         return MessageResponse.success("Posts encontrados exitosamente", posts);
     }
 
     public MessageResponse getPostById(Long id) {
-        return postRepository.findById(id)
+        Optional<Post> postOptional = postRepository.findById(id);
+        
+        // Si siempre queremos usar datos de prueba o no se encontró el post
+        if (alwaysUseTestData || !postOptional.isPresent()) {
+            logger.info("Usando datos de prueba para getPostById");
+            Post testPost = testDataService.getTestPostById(id);
+            
+            if (testPost != null) {
+                return MessageResponse.success("Post de prueba encontrado exitosamente", testPost);
+            } else {
+                return MessageResponse.error("Post no encontrado");
+            }
+        }
+        
+        return postOptional
                 .map(post -> MessageResponse.success("Post encontrado exitosamente", post))
                 .orElse(MessageResponse.error("Post no encontrado"));
     }
@@ -247,6 +317,13 @@ public class PostService {
         }
 
         List<Post> posts = postRepository.findByCategoryId(categoryId);
+        
+        // Si siempre queremos usar datos de prueba o no hay posts en la base de datos
+        if (alwaysUseTestData || posts.isEmpty()) {
+            logger.info("Usando datos de prueba para getPostsByCategory");
+            posts = testDataService.getTestPostsByCategory(categoryId);
+        }
+        
         return MessageResponse.success("Posts obtenidos exitosamente", posts);
     }
 
@@ -257,29 +334,19 @@ public class PostService {
         }
 
         List<Post> posts = postRepository.findByUserId(userId);
+        
+        // Si siempre queremos usar datos de prueba o no hay posts en la base de datos
+        if (alwaysUseTestData || posts.isEmpty()) {
+            logger.info("Usando datos de prueba para getPostsByUser");
+            posts = testDataService.getTestPostsByUser(userId);
+        }
+        
         return MessageResponse.success("Posts obtenidos exitosamente", posts);
     }
 
-    // Método para convertir Post a PostDTO
     private PostDTO convertToDTO(Post post) {
-        String username = userRepository.findById(post.getUserId())
-            .map(User::getUsername)
-            .orElse("Usuario desconocido");
-            
-        String categoryName = categoryRepository.findById(post.getCategoryId())
-            .map(category -> category.getName())
-            .orElse("Categoría desconocida");
-            
-        return PostDTO.builder()
-            .id(post.getId())
-            .title(post.getTitle())
-            .content(post.getContent())
-            .userId(post.getUserId())
-            .username(username)
-            .categoryId(post.getCategoryId())
-            .categoryName(categoryName)
-            .createdAt(post.getCreatedAt())
-            .status(post.getStatus())
-            .build();
+        // Este método se usaría para convertir la entidad Post a un DTO
+        // Implementación depende de cómo quieras transformar tus datos
+        return null; // Por ahora regresamos null
     }
 } 

@@ -22,6 +22,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -37,17 +38,27 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@Valid @RequestBody LoginRequest loginRequest) {
         
-        System.out.println("Intento de login (simple) para email: " + loginRequest.getEmail());
+        String identifier = loginRequest.getIdentifier();
+        System.out.println("Intento de login para identifier: " + identifier);
         
-        User user = userRepository.findByEmail(loginRequest.getEmail()).orElse(null);
+        User user = null;
+        
+        // Verificamos si el identifier contiene @ para determinar si es un email
+        if (identifier.contains("@")) {
+            System.out.println("Identificador detectado como email: " + identifier);
+            user = userRepository.findByEmail(identifier).orElse(null);
+        } else {
+            System.out.println("Identificador detectado como username: " + identifier);
+            user = userRepository.findByUsername(identifier).orElse(null);
+        }
 
         if (user == null) {
-            System.out.println("Usuario no encontrado (simple) para email: " + loginRequest.getEmail());
+            System.out.println("Usuario no encontrado para identifier: " + identifier);
             Map<String, String> errorResponse = Collections.singletonMap("error", "Usuario o contraseña incorrectos");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse); 
         }
 
-        System.out.println("Usuario encontrado (simple): " + user.getUsername());
+        System.out.println("Usuario encontrado: " + user.getUsername());
         System.out.println("Contraseña recibida: [" + loginRequest.getPassword() + "]"); 
         System.out.println("Contraseña almacenada: [" + user.getPassword() + "]"); 
         System.out.println("Rol del usuario: " + user.getRole().toString());
@@ -58,7 +69,7 @@ public class AuthController {
         System.out.println("Resultado de comparación directa: " + passwordMatch);
         
         if (passwordMatch) {
-            System.out.println("Contraseña coincide (simple). Generando token...");
+            System.out.println("Contraseña coincide. Generando token...");
             // Generar un token JWT simple con más información
             String token = Jwts.builder()
                                .setSubject(user.getEmail())
@@ -79,7 +90,7 @@ public class AuthController {
             
             return ResponseEntity.ok(response);
         } else {
-             System.out.println("Contraseña NO coincide (simple).");
+             System.out.println("Contraseña NO coincide.");
              Map<String, String> errorResponse = Collections.singletonMap("error", "Usuario o contraseña incorrectos");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse); 
         }
