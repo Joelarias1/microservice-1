@@ -41,7 +41,7 @@ public class PostService {
     private PostTestDataService testDataService;
     
     // Variable para controlar si se deben usar datos de prueba siempre
-    private boolean alwaysUseTestData = true;
+    private boolean alwaysUseTestData = false;
 
     private boolean canUserModifyPost(User user, Post post) {
         // Si el usuario está baneado, no puede hacer nada
@@ -105,7 +105,12 @@ public class PostService {
                     .status("ACTIVE")
                     .build();
 
+                logger.info("Objeto Post ANTES de guardar (newPost): " + newPost.toString());
+
                 Post savedPost = postRepository.save(newPost);
+
+                logger.info("Objeto Post DESPUÉS de guardar (savedPost): " + savedPost.toString());
+                
                 return MessageResponse.success("Post creado exitosamente", savedPost);
             })
             .orElse(MessageResponse.error("El usuario especificado no existe"));
@@ -311,11 +316,6 @@ public class PostService {
     }
 
     public MessageResponse getPostsByCategory(Long categoryId) {
-        // Validar que la categoría existe
-        if (!categoryRepository.existsById(categoryId)) {
-            return MessageResponse.error("La categoría especificada no existe");
-        }
-
         List<Post> posts = postRepository.findByCategoryId(categoryId);
         
         // Si siempre queremos usar datos de prueba o no hay posts en la base de datos
@@ -324,15 +324,14 @@ public class PostService {
             posts = testDataService.getTestPostsByCategory(categoryId);
         }
         
+        if (posts.isEmpty()) {
+            return MessageResponse.error("No se encontraron posts para la categoría especificada");
+        }
+
         return MessageResponse.success("Posts obtenidos exitosamente", posts);
     }
 
     public MessageResponse getPostsByUser(Long userId) {
-        // Validar que el usuario existe
-        if (!userRepository.existsById(userId)) {
-            return MessageResponse.error("El usuario especificado no existe");
-        }
-
         List<Post> posts = postRepository.findByUserId(userId);
         
         // Si siempre queremos usar datos de prueba o no hay posts en la base de datos
@@ -341,6 +340,10 @@ public class PostService {
             posts = testDataService.getTestPostsByUser(userId);
         }
         
+        if (posts.isEmpty()) {
+            return MessageResponse.error("No se encontraron posts para el usuario especificado");
+        }
+
         return MessageResponse.success("Posts obtenidos exitosamente", posts);
     }
 

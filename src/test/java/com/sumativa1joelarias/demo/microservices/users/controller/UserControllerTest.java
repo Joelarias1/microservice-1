@@ -12,9 +12,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,6 +28,9 @@ class UserControllerTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private JdbcTemplate jdbcTemplate;
 
     @InjectMocks
     private UserController userController;
@@ -136,22 +141,30 @@ class UserControllerTest {
 
     @Test
     void deleteUser_shouldReturnNoContent() {
+        when(jdbcTemplate.update(eq("DELETE FROM comments WHERE user_id = ?"), eq(1L))).thenReturn(2);
+        when(jdbcTemplate.update(eq("DELETE FROM posts WHERE user_id = ?"), eq(1L))).thenReturn(1);
         doNothing().when(userService).deleteUser(1L);
 
-        ResponseEntity<Void> response = userController.deleteUser(1L);
+        ResponseEntity<Map<String, String>> response = userController.deleteUser(1L);
 
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("true", response.getBody().get("success"));
+        assertEquals("Usuario eliminado correctamente", response.getBody().get("message"));
+        assertEquals("Se eliminaron 2 comentarios y 1 posts", response.getBody().get("details"));
         verify(userService, times(1)).deleteUser(1L);
     }
 
-     @Test
-    void deleteUser_whenUserDoesNotExist_shouldThrowException() {
+    @Test
+    void deleteUser_whenUserDoesNotExist_shouldReturnError() {
         doThrow(new RuntimeException("User not found to delete")).when(userService).deleteUser(99L);
 
-        assertThrows(RuntimeException.class, () -> {
-            userController.deleteUser(99L);
-        });
+        ResponseEntity<Map<String, String>> response = userController.deleteUser(99L);
 
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("false", response.getBody().get("success"));
+        assertTrue(response.getBody().get("message").contains("Error al eliminar usuario"));
         verify(userService, times(1)).deleteUser(99L);
     }
 

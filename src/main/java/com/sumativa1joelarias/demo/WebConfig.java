@@ -17,10 +17,18 @@ public class WebConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**") // Permite CORS para todas las rutas bajo /api
-                        .allowedOrigins("http://localhost:4200") // Permite explícitamente el origen del frontend Angular
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Métodos HTTP permitidos
+                        .allowedOrigins(
+                                "http://localhost:4200",
+                                "http://192.168.1.100:4200",
+                                "http://localhost:8080",
+                                "http://192.168.1.100:8080"
+
+                                // "http://tu-ip-local:puerto-frontend"
+                                ) 
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH") // Métodos HTTP permitidos
                         .allowedHeaders("*") // Cabeceras permitidas
-                        .allowCredentials(true); // Permite credenciales (cookies, etc.) si las usas
+                        .allowCredentials(true) // Permite credenciales (cookies, etc.) si las usas
+                        .maxAge(3600); // Opcional: tiempo de caché para la respuesta preflight
             }
         };
     }

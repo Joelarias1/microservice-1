@@ -3,8 +3,11 @@ package com.sumativa1joelarias.demo.microservices.users.controller;
 import com.sumativa1joelarias.demo.microservices.users.dto.LoginRequest;
 import com.sumativa1joelarias.demo.microservices.users.dto.LoginResponse;
 import com.sumativa1joelarias.demo.microservices.users.dto.RegisterRequest;
+import com.sumativa1joelarias.demo.microservices.users.dto.UserDTO;
+import com.sumativa1joelarias.demo.microservices.users.dto.UserManagementRequest;
 import com.sumativa1joelarias.demo.microservices.users.model.User;
 import com.sumativa1joelarias.demo.microservices.users.repository.UserRepository;
+import com.sumativa1joelarias.demo.microservices.users.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 // Importaciones básicas para JWT (simplificado)
 import io.jsonwebtoken.Jwts;
@@ -22,17 +24,18 @@ import java.security.Key;
 import java.util.Date;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final UserRepository userRepository;
+    private final UserService userService;
     private final Key jwtSecretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    public AuthController(UserRepository userRepository) {
+    public AuthController(UserRepository userRepository, UserService userService) {
         this.userRepository = userRepository;
+        this.userService = userService;
     }
 
     @PostMapping("/login")
@@ -43,7 +46,6 @@ public class AuthController {
         
         User user = null;
         
-        // Verificamos si el identifier contiene @ para determinar si es un email
         if (identifier.contains("@")) {
             System.out.println("Identificador detectado como email: " + identifier);
             user = userRepository.findByEmail(identifier).orElse(null);
@@ -64,13 +66,11 @@ public class AuthController {
         System.out.println("Rol del usuario: " + user.getRole().toString());
         System.out.println("ID del usuario: " + user.getId());
 
-        // Usar comparación directa .equals()
         boolean passwordMatch = loginRequest.getPassword().equals(user.getPassword());
         System.out.println("Resultado de comparación directa: " + passwordMatch);
         
         if (passwordMatch) {
             System.out.println("Contraseña coincide. Generando token...");
-            // Generar un token JWT simple con más información
             String token = Jwts.builder()
                                .setSubject(user.getEmail())
                                .claim("userId", user.getId())
@@ -79,7 +79,6 @@ public class AuthController {
                                .signWith(jwtSecretKey)
                                .compact();
             
-            // Creamos una respuesta más completa con token, userId y role
             LoginResponse response = new LoginResponse(token);
             response.setUserId(user.getId());
             response.setRole(user.getRole().toString());
@@ -96,7 +95,6 @@ public class AuthController {
         }
     }
 
-    // --- Endpoint de Registro --- 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
         
@@ -109,20 +107,21 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
 
-        User newUser = new User();
-        newUser.setUsername(registerRequest.getUsername());
-        newUser.setEmail(registerRequest.getEmail());
-        // Guardar contraseña en texto plano (INSEGURO - SOLO PARA TEST)
-        newUser.setPassword(registerRequest.getPassword()); 
-        newUser.setRole(com.sumativa1joelarias.demo.microservices.users.enums.UserRole.ADMIN); // Asignamos rol ADMIN por mientras
-        newUser.setStatus("ACTIVE");
+        UserManagementRequest userManagementRequest = new UserManagementRequest();
+        userManagementRequest.setUsername(registerRequest.getUsername());
+        userManagementRequest.setEmail(registerRequest.getEmail());
+        userManagementRequest.setPassword(registerRequest.getPassword());
 
         try {
-            userRepository.save(newUser);
-             Map<String, String> successResponse = Collections.singletonMap("message", "Usuario registrado exitosamente.");
+            UserDTO createdUser = userService.createUser(userManagementRequest);
+            Map<String, String> successResponse = Collections.singletonMap("message", "Usuario registrado exitosamente. ID: " + createdUser.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(successResponse);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error de validación al registrar usuario: " + e.getMessage());
+            Map<String, String> errorResponse = Collections.singletonMap("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
-             System.err.println("Error al guardar nuevo usuario: " + e.getMessage());
+             System.err.println("Error interno al registrar el usuario: " + e.getMessage());
              Map<String, String> errorResponse = Collections.singletonMap("error", "Ocurrió un error interno al registrar el usuario.");
              return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }

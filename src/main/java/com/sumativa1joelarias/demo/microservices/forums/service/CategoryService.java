@@ -25,8 +25,8 @@ public class CategoryService {
     @Autowired
     private CategoryTestDataService testDataService;
     
-    // Variable para controlar si se deben usar datos de prueba siempre
-    private boolean alwaysUseTestData = true;
+    // Variable para controlar si se deben usar datos de prueba solo cuando no hay datos
+    private boolean alwaysUseTestData = false;
     
     /**
      * Obtiene todas las categorías
@@ -35,8 +35,8 @@ public class CategoryService {
     public MessageResponse getAllCategories() {
         List<Category> categories = categoryRepository.findAll();
         
-        // Si siempre queremos usar datos de prueba o no hay categorías en la base de datos
-        if (alwaysUseTestData || categories.isEmpty()) {
+        // Si no hay categorías en la base de datos o si alwaysUseTestData está activado
+        if (categories.isEmpty() || alwaysUseTestData) {
             logger.info("Usando datos de prueba para getAllCategories");
             categories = testDataService.generateTestCategories();
         }
@@ -62,18 +62,17 @@ public class CategoryService {
     public MessageResponse getCategoryById(Long id) {
         Optional<Category> categoryOptional = categoryRepository.findById(id);
         
-        // Si siempre queremos usar datos de prueba o no se encontró la categoría
-        if (alwaysUseTestData || !categoryOptional.isPresent()) {
-            logger.info("Usando datos de prueba para getCategoryById");
-            Optional<Category> testCategory = testDataService.getCategoryById(id);
-            
-            return testCategory
-                    .map(category -> MessageResponse.success("Categoría de prueba encontrada exitosamente", category))
-                    .orElse(MessageResponse.error("Categoría no encontrada"));
+        // Si la categoría existe en la base de datos y no estamos forzando datos de prueba
+        if (categoryOptional.isPresent() && !alwaysUseTestData) {
+            return MessageResponse.success("Categoría encontrada exitosamente", categoryOptional.get());
         }
         
-        return categoryOptional
-                .map(category -> MessageResponse.success("Categoría encontrada exitosamente", category))
+        // Si no existe en la base de datos o estamos forzando datos de prueba
+        logger.info("Usando datos de prueba para getCategoryById");
+        Optional<Category> testCategory = testDataService.getCategoryById(id);
+        
+        return testCategory
+                .map(category -> MessageResponse.success("Categoría de prueba encontrada exitosamente", category))
                 .orElse(MessageResponse.error("Categoría no encontrada"));
     }
     
@@ -106,5 +105,13 @@ public class CategoryService {
                     return MessageResponse.success("Categoría eliminada exitosamente");
                 })
                 .orElse(MessageResponse.error("Categoría no encontrada"));
+    }
+    
+    /**
+     * Establece si se deben usar siempre datos de prueba
+     * @param useTestData true para usar siempre datos de prueba
+     */
+    public void setAlwaysUseTestData(boolean useTestData) {
+        this.alwaysUseTestData = useTestData;
     }
 } 

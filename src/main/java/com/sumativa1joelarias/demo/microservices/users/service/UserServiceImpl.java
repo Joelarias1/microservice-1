@@ -182,7 +182,7 @@ public class UserServiceImpl implements UserService {
                 
                 logger.info("Intentando eliminar usuario con ID: " + id + " nuevamente");
                 // Ahora intentamos nuevamente eliminar el usuario
-                userRepository.deleteById(id);
+        userRepository.deleteById(id);
                 logger.info("Usuario con ID: " + id + " eliminado exitosamente");
             } catch (Exception ex) {
                 logger.error("Error al intentar limpiar referencias y eliminar usuario: " + ex.getMessage(), ex);
